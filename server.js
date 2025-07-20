@@ -13,10 +13,13 @@ app.get('/', (req, res) => {
     res.send('¡Hola, mundo! La aplicación de biblioteca está funcionando correctamente .');
 })
 
+// TRAE TODOS LOS LIBROS
 app.get('/api/v1/libros', async (req,res) => {
    try{
     // USAMOS SENTENCIAS SQL
-     const books =  await superbase.from('libros').select('*')
+     const books =  await superbase
+     .from('libros')
+     .select('*')
      res.status(200).json(books);
    } 
    catch (error){
@@ -28,12 +31,12 @@ app.get('/api/v1/libros', async (req,res) => {
    }
 
 });
-
+// CREA UN NUEVO LIBROL
 app.post('/api/v1/libros',async (req,res) => {
   try
   {
     const { titulo, autor, isbn, year, genero, stock } = req.body;
-    const updateBooks = await superbase
+    const createBooks = await superbase
     .from('libros')
     .insert([
       {
@@ -48,7 +51,7 @@ app.post('/api/v1/libros',async (req,res) => {
       
     ])
     
-    res.status(201).json(updateBooks)
+    res.status(201).json(createBooks)
   }
   catch(error)
   {
@@ -62,7 +65,68 @@ app.post('/api/v1/libros',async (req,res) => {
 
 });
 
+// ACTUALIZA UN LIBRO 
+app.put('/api/v1/libros/:id', async (req,res) => {
+    try
+    {
+      // instanciamiento del id pq por id buscamos para la actualización de todos los campos
+      const {id} = req.params; 
+      const {titulo, autor, isbn, year, genero, stock } = req.body;
+      const updateBook = await superbase
+      .from('libros') 
+      .update({ // funcion del cliente de superbase para actualizar
+        // Instanciamiento de datos 
+          titulo: titulo,
+          autor: autor,
+          isbn: isbn,
+          year: year,
+          genero: genero,
+          stock: stock,
+      })
+      .eq('id', id)
+      .select();
+      // validacion
+      if(!updateBook)
+      {
+        return res.status(400).json({msg: 'Libro no encontrado'})
+      }
+      // si todo está bien, regresa un 200 OK
+      res.status(200).json(updateBook);
+    }
 
+    catch (error)
+    {
+      // CONTROL DE ERRORES 
+      console.error(error.message);
+      res.status(500).json({ msg: 'Error del servidor: ' + error.message });
+    }
+
+}); 
+
+// Eliminar un libro
+app.delete('/api/v1/libros/:id',async(req,res) =>{
+  try
+  {
+    const {id} = req.params; 
+    const deleteBook = await superbase
+    .from('libros')
+    .delete()
+    .eq('id', id);
+
+    if(!deleteBook)
+    {
+      return res.status(400).json({msg : 'El libro no se puede eliminar porque no ha sido encontrado'})
+    }
+     // si todo está bien, regresa un 200 OK
+    res.status(200).json(deleteBook);
+  }
+  catch (error)
+  {
+    console.error(error.message);
+    res.status(500).json({ msg: 'Error del servidor: ' + error.message });
+  }
+
+})
 
 
 
