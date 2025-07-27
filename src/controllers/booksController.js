@@ -107,22 +107,22 @@ exports.deletelibro = async(req,res) =>{
   try
   {
     const {id} = req.params; 
-    const {data,error} = await superbase
-    .from('libros')
-    .delete()
-    .eq('id', id);
+    const {data,error} = await BookService.deleteBook(id);
+    if(error) 
+      {
+        if (error.message.includes('El libro para eliminar no existe')) 
+        {
+          return res.status(404).json({ msg: error.message });
+        }
+        // Cualquier otro error, incluyendo errores de base de datos (Supabase)
+        else 
+        {
+          return res.status(500).json({ msg: 'Error al actualizar el libro: ' + error.message });
+        }
+      }
 
-    if(error)
-    {
-       res.status(500).json({ msg: 'Error del servidor: ' + error.message });
-      
-    }
-    else if (data.length === 0)
-    {
-     return res.status(404).json({msg : 'El libro no se puede eliminar porque no ha sido encontrado'})
-    }
      // si todo está bien, regresa un 204 NO CONTENT OK
-    res.status(204).send();
+      res.status(204).send();
   }
   catch (error)
   {

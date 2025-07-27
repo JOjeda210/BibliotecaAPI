@@ -78,7 +78,7 @@ async function updateBook (id,bookData)
       {
         return{
             data: null, // No hay datos exitosos
-            error: { message: 'El libr para actualizar no existe' }
+            error: { message: 'El libro para actualizar no existe' }
         }
       }
             
@@ -87,9 +87,33 @@ async function updateBook (id,bookData)
     
 }
 
+async function deleteBook (id) 
+{
+    const {data,error} = await superbase
+    .from('libros')
+    .delete()
+    .eq('id', id)
+    .select();
+
+    if(error)
+    {
+      return { data: null, error: { message: 'Error de base de datos: ' + error.message } };
+      
+    }
+    else if (data.length === 0)
+    {
+      return{
+            data: null, // No hay datos exitosos
+            error: { message: 'El libro para eliminar no existe' }
+        }
+    }
+    return {data, error}
+}
+
 
 module.exports = {
     getAllLibros,
     createBook,
     updateBook,
+    deleteBook
 }; 
