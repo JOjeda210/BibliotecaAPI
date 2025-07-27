@@ -1,4 +1,4 @@
-const superbase = require('./config/db');  
+const superbase = require('../config/db');  
 
 async function getAllLibros (params) 
 {
