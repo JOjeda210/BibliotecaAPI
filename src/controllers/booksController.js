@@ -1,7 +1,10 @@
 
 const superbase = require('../config/db'); 
+const BookService = require('../services/bookService')
+
 // LOS CONTROLADORES SE ENCARGAN DE RECIBIR LAS SOLICITUDES DE LAS RUTAS 
 // LA RUTA HACE LA PETICIÓN AL CONTROLLER SEGÚN EL VERBO HTTP Q CORRESPONDA 
+// LOS SERVICIOS SE ENCARGAN DE APLICAR TODA LA LÓGICA DE NEGOCIO COMO LO SON CONSULTAS, VALIDACIONES, FORMATEO DE DATA, ETC
 
 
 
@@ -11,9 +14,8 @@ const superbase = require('../config/db');
 exports.getalllibros =  async (req,res) => {
    try{
     // USAMOS SENTENCIAS SQL
-     const {data, error} =  await superbase
-     .from('libros')
-     .select('*')
+     const {data, error} =  await BookService.getAllLibros();
+     
 
       if(error)
       {
@@ -36,26 +38,19 @@ exports.createbook = async (req,res) => {
   try
   {
     const { titulo, autor, isbn, year, genero, stock } = req.body;
-    const {createBooks,error} = await superbase
-    .from('libros')
-    .insert([
-      {
-        titulo: titulo,
-        autor: autor,
-        isbn: isbn,
-        year: year,
-        genero: genero,
-        stock: stock,
-      }  
-       
-      
-    ])
-      if(error)
-      {
-        res.status(500).json({ msg: 'Error del servidor: ' + error.message });
-
+    // Campos obligatorios no vacíos/nulos
+    const {data, error} = await BookService.createBook(req.body)
+     // Dentro de exports.createbook
+    if (error) 
+    {
+      if (error.message.includes('Todos los campos son obligatorios') || error.message.includes('deben ser números')) {
+        // Error de validación de cliente
+        return res.status(400).json({ msg: error.message });
       }
-    res.status(201).json(createBooks)
+      // Para cualquier otro tipo de error que provenga del servicio (ej. error de Supabase)
+      return res.status(500).json({ msg: 'Error al crear el libro: ' + error.message });
+    } 
+    res.status(201).json(data)
   }
   catch(error)
   {
@@ -76,35 +71,25 @@ exports.updatelibro =  async (req,res) => {
       // instanciamiento del id pq por id buscamos para la actualización de todos los campos
       const {id} = req.params; 
       const {titulo, autor, isbn, year, genero, stock } = req.body;
-      // Data antes era updateBook, esto se hace para poder controlar mejor los errores
-      const {data,error} = await superbase
-      .from('libros') 
-      .update({ // funcion del cliente de superbase para actualizar
-        // Instanciamiento de datos 
-          titulo: titulo,
-          autor: autor,
-          isbn: isbn,
-          year: year,
-          genero: genero,
-          stock: stock,
-      })
-      .eq('id', id)
-      .select();
-      // validaciones
-      if (error)
+      const {data, error} = await BookService.updateBook(id, req.body)
+      if(error) 
       {
-        res.status(500).json({ msg: 'Error del servidor: ' + error.message }); 
+        if (error.message.includes('Todos los campos son obligatorios') || error.message.includes('deben ser números'))
+        {
+          return res.status(400).json({ msg: error.message });
+        }
+        else if (error.message.includes('El libro para actualizar no existe')) 
+        {
+          return res.status(404).json({ msg: error.message });
+        }
+        // Cualquier otro error, incluyendo errores de base de datos (Supabase)
+        else 
+        {
+          return res.status(500).json({ msg: 'Error al actualizar el libro: ' + error.message });
+        }
       }
-      else if (data.length)
-      {
-         
-         return res.status(400).json({msg: 'Libro no encontrado'})
-      }
-      // si todo está bien, regresa un 200 OK
+       // si todo está bien, regresa un 200 OK
       res.status(200).json(data);
-
-
-
 
     }
 
