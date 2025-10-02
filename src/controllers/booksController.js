@@ -12,8 +12,7 @@ const BookService = require('../services/bookService')
 
 // TRAE TODOS LOS LIBROS1
 exports.getalllibros =  async (req,res) => {
-   try{
-    // USAMOS SENTENCIAS SQL
+   try{   
      const {data, error} =  await BookService.getAllLibros();
      
 
